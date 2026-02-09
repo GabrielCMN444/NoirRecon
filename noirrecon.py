@@ -1,67 +1,126 @@
+#!/usr/bin/env python3
+
 import argparse
+import os
 from rich import print
+from rich.panel import Panel
 
 from modules.subdomains import find_subdomains
-from modules.alive import check_alive
-from modules.nuclei_scan import run_nuclei
-from modules.utils import create_output_folder, save_list
+from modules.alive import check_alive_hosts
+from modules.nuclei_scan import run_nuclei_scan
+from modules.report import save_report
 
 
+# ----------------------------
+# NoirRecon Banner
+# ----------------------------
+def banner():
+    print(
+        Panel.fit(
+            "[bold magenta]🖤 NoirRecon — Safe Recon Tool[/bold magenta]\n"
+            "[white]Subdomain Enum • Alive Check • Optional Nuclei Scan[/white]\n\n"
+            "[yellow]⚠ Only use on domains you own or have permission to test.[/yellow]",
+            border_style="magenta",
+        )
+    )
+
+
+# ----------------------------
+# Main Logic
+# ----------------------------
 def main():
+    banner()
+
     parser = argparse.ArgumentParser(
-        description="NoirRecon  — Professional Recon Tool"
+        description="NoirRecon — Professional Safe Recon Tool"
     )
 
     parser.add_argument(
-        "-d", "--domain",
+        "-d",
+        "--domain",
         required=True,
-        help="Target domain (example.com)"
+        help="Target domain (example.com)",
     )
 
     parser.add_argument(
         "--limit",
         type=int,
-        default=300,
-        help="Max number of subdomains to process"
+        default=200,
+        help="Max number of subdomains to process",
     )
 
     parser.add_argument(
         "--threads",
         type=int,
         default=50,
-        help="Number of threads for httpx"
+        help="Threads for httpx probing",
+    )
+
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Fast mode (critical-only nuclei templates)",
+    )
+
+    parser.add_argument(
+        "--nuclei",
+        action="store_true",
+        help="Enable nuclei vulnerability scanning (optional)",
     )
 
     args = parser.parse_args()
 
-    domain = args.domain
-    limit = args.limit
-    threads = args.threads
+    os.makedirs("output", exist_ok=True)
 
-    print("\n[bold magenta]🖤 NoirRecon Started...[/bold magenta]\n")
+    # ----------------------------
+    # Step 1 — Subdomain Enum
+    # ----------------------------
+    print("\n[bold cyan]Step 1 — Subdomain Enumeration[/bold cyan]")
+    subdomains = find_subdomains(args.domain, args.limit)
 
-    # Create output folder
-    create_output_folder()
+    if not subdomains:
+        print("[red][!] No subdomains found. Exiting.[/red]")
+        return
 
-    # Step 1 — Subdomain Enumeration
-    subs = find_subdomains(domain, limit)
-    save_list("output/subdomains.txt", subs)
+    # ----------------------------
+    # Step 2 — Alive Hosts
+    # ----------------------------
+    print("\n[bold cyan]Step 2 — Alive Hosts Detection[/bold cyan]")
+    alive_hosts = check_alive_hosts(subdomains, threads=args.threads)
 
-    # Step 2 — Alive Host Check
-    alive_hosts = check_alive(subs, threads)
-    save_list("output/alive.txt", alive_hosts)
+    if not alive_hosts:
+        print("[yellow][!] No alive hosts found.[/yellow]")
+        print("[yellow]→ This is normal for many domains.[/yellow]")
+        save_report(args.domain, subdomains, [], [])
+        return
 
-    # Step 3 — Nuclei Vulnerability Scan
-    findings = run_nuclei(alive_hosts)
-    save_list("output/nuclei.txt", findings)
+    print(f"[bold green][+] Alive hosts found: {len(alive_hosts)}[/bold green]")
 
-    # Final Report
-    print("\n[bold green]========= FINAL REPORT =========[/bold green]")
-    print(f"[+] Subdomains found: {len(subs)}")
-    print(f"[+] Alive hosts:      {len(alive_hosts)}")
-    print(f"[+] Vulns detected:   {len(findings)}")
-    print("[bold cyan]Output saved inside /output folder[/bold cyan]\n")
+    # ----------------------------
+    # Step 3 — Optional Nuclei
+    # ----------------------------
+    nuclei_results = []
+
+    if args.nuclei:
+        print("\n[bold cyan]Step 3 — Vulnerability Scan (Nuclei)[/bold cyan]")
+        nuclei_results = run_nuclei_scan(alive_hosts, fast=args.fast)
+    else:
+        print(
+            "\n[yellow]Step 3 skipped — Nuclei scan disabled.[/yellow]\n"
+            "[white]Run with:[/white] [bold]--nuclei[/bold] to enable."
+        )
+
+    # ----------------------------
+    # Step 4 — Report
+    # ----------------------------
+    print("\n[bold cyan]Step 4 — Saving Report[/bold cyan]")
+    save_report(args.domain, subdomains, alive_hosts, nuclei_results)
+
+    print(
+        "\n[bold magenta]🖤 Recon Completed! Check the output/ folder.[/bold magenta]"
+    )
 
 
+# ----------------------------
 if __name__ == "__main__":
     main()

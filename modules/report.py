@@ -1,37 +1,42 @@
-from datetime import datetime
+import os
+from rich import print
 
 
-def generate_report(domain, subdomains, alive):
+def save_report(domain, subdomains, alive_hosts, nuclei_results):
     """
-    Generates a Markdown report.
+    Saves a full recon report inside output/report.txt
     """
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    os.makedirs("output", exist_ok=True)
 
-    report = f"""# ShadowRecon Report 🦇
+    report_path = "output/report.txt"
 
-Target: **{domain}**  
-Date: {now}
+    with open(report_path, "w") as f:
+        f.write("🖤 NoirRecon Report\n")
+        f.write("=" * 50 + "\n\n")
 
----
+        f.write(f"Target Domain: {domain}\n\n")
 
-## Subdomains Found ({len(subdomains)})
+        # Subdomains
+        f.write("[+] Subdomains Found:\n")
+        for sub in subdomains:
+            f.write(f"  - {sub}\n")
 
-"""
+        f.write("\n")
 
-    for s in subdomains:
-        report += f"- {s}\n"
+        # Alive Hosts
+        f.write("[+] Alive Hosts:\n")
+        for host in alive_hosts:
+            f.write(f"  - {host}\n")
 
-    report += f"""
+        f.write("\n")
 
----
+        # Nuclei Findings
+        f.write("[+] Nuclei Findings:\n")
+        if nuclei_results:
+            for finding in nuclei_results:
+                f.write(f"  - {finding}\n")
+        else:
+            f.write("  No vulnerabilities found.\n")
 
-## Alive Hosts ({len(alive)})
-
-"""
-
-    for h in alive:
-        report += f"- {h}\n"
-
-    with open("output/report.md", "w") as f:
-        f.write(report)
+    print(f"[bold green]✔ Report saved at {report_path}[/bold green]")

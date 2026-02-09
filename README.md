@@ -1,29 +1,28 @@
 # 🖤 NoirRecon
 
-NoirRecon is a professional reconnaissance automation tool inspired by real Bug Bounty workflows.
+NoirRecon é uma ferramenta de **reconhecimento automatizado** voltada para portfólio e aprendizado, focada em:
 
-It performs:
+- Enumeração de subdomínios
+- Detecção de hosts ativos
+- Scan opcional com Nuclei (modo seguro)
 
-- Subdomain Enumeration (subfinder)
-- Alive Host Discovery (httpx)
-- Vulnerability Scanning (nuclei)
-
----
-
-## ⚡ Features
-
-✅ Fast subdomain recon  
-✅ Alive filtering  
-✅ High/Critical nuclei scans  
-✅ Clean output reports  
-✅ Modular Python codebase  
+⚠ **Uso permitido apenas em domínios próprios ou programas autorizados (Bug Bounty).**
 
 ---
 
-## 🚀 Installation
+## ✨ Features
 
-Clone the repository:
+✅ Subdomain Enumeration (subfinder)  
+✅ Alive Hosts Detection (httpx)  
+✅ Vulnerability Scan opcional (nuclei)  
+✅ Report automático em `output/report.txt`  
+✅ Fast Mode (critical-only templates)
+
+---
+
+## 🚀 Instalação
+
+### Dependências externas:
 
 ```bash
-git clone https://github.com/yourname/NoirRecon.git
-cd NoirRecon
+sudo pacman -S subfinder httpx nuclei

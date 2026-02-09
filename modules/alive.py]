@@ -1,0 +1,31 @@
+import subprocess
+from rich import print
+from rich.progress import track
+
+
+def check_alive(subdomains, threads):
+    print("[+] Checking alive hosts with httpx...")
+
+    alive = []
+
+    # Vamos checar um por um pra mostrar progresso
+    for sub in track(subdomains, description="🖤 Probing hosts..."):
+        cmd = ["httpx", "-silent", "-threads", "1"]
+
+        result = subprocess.run(
+            cmd,
+            input=sub,
+            text=True,
+            capture_output=True
+        )
+
+        if result.stdout.strip():
+            alive.append(result.stdout.strip())
+
+    print(f"[+] Alive hosts: {len(alive)}")
+
+    with open("output/live.txt", "w") as f:
+        for host in alive:
+            f.write(host + "\n")
+
+    return alive
