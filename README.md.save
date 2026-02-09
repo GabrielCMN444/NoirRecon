@@ -1,0 +1,17 @@
+# NoirRecon 🕵️🌑
+
+NoirRecon is an automated reconnaissance + vulnerability scanning toolkit
+for Pentest and Bug Bounty.
+
+## Features
+
+- Subdomain Enumeration (Subfinder)
+- Live Host Detection (Httpx)
+- Port Scanning (Nmap)
+- Vulnerability Scanning (Nuclei)
+- Organized Output Reports
+
+## Usage
+
+```bash
+python noirrecon.py -d target.com
