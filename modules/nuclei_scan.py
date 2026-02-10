@@ -1,88 +1,53 @@
 import subprocess
-from rich import print
-from rich.progress import Progress, SpinnerColumn, TextColumn
 
 
-def run_nuclei_scan(alive_hosts, fast=False):
+def nuclei_scan(targets, fast=False):
     """
-    Runs nuclei vulnerability scan on alive hosts.
+    Runs nuclei vulnerability scan.
 
-    fast=True:
-        - only critical templates
-        - low request count
-        - quicker results
+    Parameters:
+        targets (list): Alive URLs
+        fast (bool): If True, runs only critical templates
+
+    Returns:
+        list: Findings output
     """
 
-    if not alive_hosts:
-        print("[yellow][!] No alive hosts provided for nuclei scan.[/yellow]")
-        return []
+    print("[+] Running nuclei scan...")
 
-    print("\n[+] Running nuclei scan...")
-
-    # Save targets temporarily
+    # Save targets into temp file
     targets_file = "output/alive.txt"
+
     with open(targets_file, "w") as f:
-        for host in alive_hosts:
-            f.write(host + "\n")
+        for t in targets:
+            f.write(t + "\n")
 
-    # Output file
-    output_file = "output/nuclei.txt"
-
-    # FAST MODE SETTINGS
+    # Fast mode = only critical
     if fast:
         severity = "critical"
-        rate_limit = "50"
-        timeout = "3"
-        templates = "cves/"
-        print("[bold magenta]⚡ FAST MODE: Critical CVEs only[/bold magenta]")
+        print("[+] Fast mode enabled (critical only)")
     else:
         severity = "high,critical"
-        rate_limit = "30"
-        timeout = "5"
-        templates = None
 
-    # Build nuclei command
     cmd = [
         "nuclei",
         "-l", targets_file,
         "-severity", severity,
-        "-rl", rate_limit,
-        "-timeout", timeout,
-        "-o", output_file,
         "-silent"
     ]
 
-    # Optional template restriction
-    if templates:
-        cmd += ["-t", templates]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-    findings = []
+        output = result.stdout.strip().splitlines()
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[bold red]💀 Scanning vulnerabilities...[/bold red]"),
-    ) as progress:
+        if output:
+            print(f"[+] Nuclei found {len(output)} issues!")
+        else:
+            print("[+] No vulnerabilities found.")
 
-        task = progress.add_task("scan", total=None)
+        return output
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True
-        )
-
-        progress.stop()
-
-    # Read results
-    if result.stdout.strip():
-        findings = result.stdout.strip().split("\n")
-
-    # Save findings
-    if findings:
-        print(f"[bold red][!] Vulnerabilities found: {len(findings)}[/bold red]")
-        for fnd in findings[:5]:
-            print("   ", fnd)
-    else:
-        print("[bold green][✔] No vulnerabilities found.[/bold green]")
-
-    return findings
+    except Exception as e:
+        print("[-] Error running nuclei:", e)
+        return []

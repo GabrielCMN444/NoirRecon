@@ -1,41 +1,42 @@
 import subprocess
-from rich.progress import Progress
+from rich.console import Console
+from rich.progress import track
+
+console = Console()
 
 
 def check_alive_hosts(subdomains, threads=50):
     """
-    Uses httpx to check which subdomains are alive.
+    Runs httpx to check which subdomains are alive.
     Returns a list of alive URLs.
     """
 
-    alive = []
+    console.print("[+] Checking alive hosts with httpx...\n")
 
-    with Progress() as progress:
-        task = progress.add_task(
-            "🖤 Probing hosts...",
-            total=len(subdomains)
-        )
+    alive_hosts = []
 
-        for sub in subdomains:
-            url = f"https://{sub}"
-
+    # Progress bar
+    for sub in track(subdomains, description="🖤 Probing hosts..."):
+        try:
             cmd = [
                 "httpx",
                 "-silent",
-                "-timeout", "3",
                 "-threads", str(threads),
-                "-u", url
+                "-u", sub
             ]
 
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True)
 
             if result.stdout.strip():
-                alive.append(result.stdout.strip())
+                alive_hosts.append(result.stdout.strip())
 
-            progress.advance(task)
+        except Exception:
+            continue
 
-    return alive
+    console.print(f"\n[+] Alive hosts found: {len(alive_hosts)}")
+
+    # Save output
+    with open("output/alive.txt", "w") as f:
+        f.write("\n".join(alive_hosts))
+
+    return alive_hosts

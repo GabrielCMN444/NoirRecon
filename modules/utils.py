@@ -1,14 +1,19 @@
 import os
+import logging
 
 
-def create_output_folder():
-    """Cria a pasta output se não existir"""
-    if not os.path.exists("output"):
-        os.mkdir("output")
+def setup_logging(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
 
+    log_file = os.path.join(output_dir, "noirrecon.log")
 
-def save_list(filename, data):
-    """Salva uma lista em arquivo txt"""
-    with open(filename, "w") as f:
-        for item in data:
-            f.write(item + "\n")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(levelname)s | %(message)s",
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
+    )
+
+    logging.info("Logging started...")

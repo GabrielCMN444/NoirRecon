@@ -4,3 +4,4 @@ Pygments==2.19.2
 rich==14.3.2
 rich
 argparse
+pyyaml

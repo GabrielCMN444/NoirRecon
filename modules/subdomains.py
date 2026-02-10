@@ -1,30 +1,43 @@
 import subprocess
-from rich import print
 from rich.console import Console
-from rich.spinner import Spinner
+
+console = Console()
 
 
-def find_subdomains(domain, limit):
-    console = Console()
+def find_subdomains(domain, limit=200):
+    """
+    Runs subfinder and returns a list of subdomains.
+    """
 
-    print(f"[+] Running subfinder on {domain}...")
+    console.print(f"[+] Running subfinder on {domain}...")
 
-    cmd = ["subfinder", "-d", domain, "-silent"]
+    try:
+        cmd = [
+            "subfinder",
+            "-d", domain,
+            "-silent"
+        ]
 
-    with console.status("🕵️ Enumerating subdomains...", spinner="dots"):
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run(cmd, capture_output=True, text=True)
 
-    subs = result.stdout.splitlines()
-    subs = subs[:limit]
+        if result.returncode != 0:
+            console.print("[red]Subfinder failed.[/red]")
+            console.print(result.stderr)
+            return []
 
-    print(f"[+] Found {len(subs)} subdomains (limit={limit})")
+        subdomains = result.stdout.splitlines()
 
-    with open("output/subdomains.txt", "w") as f:
-        for s in subs:
-            f.write(s + "\n")
+        # Apply limit
+        subdomains = subdomains[:limit]
 
-    return subs
+        console.print(f"[+] Found {len(subdomains)} subdomains (limit={limit})")
+
+        # Save correctly into output/
+        with open("output/subdomains.txt", "w") as f:
+            f.write("\n".join(subdomains))
+
+        return subdomains
+
+    except Exception as e:
+        console.print(f"[red]Subdomain scan failed: {e}[/red]")
+        return []
