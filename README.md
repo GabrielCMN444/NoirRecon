@@ -128,7 +128,7 @@ O uso indevido pode ser considerado atividade ilegal.
 
 👤 Autor
 
- Desenvolvido por Gabriel Campos
+ Desenvolvido por Gabriel Mascarenhas
 
  Estudante de Cybersecurity | Pentest | Front-end Dev
 
